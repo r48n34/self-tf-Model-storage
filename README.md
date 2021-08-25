@@ -2,7 +2,7 @@
 Trained model for tfjs  
 
 ```javascript
-await tf.loadLayersModel('https://cdn.jsdelivr.net/gh/r48n34/tfjs-Model/<file-name>/model.json')
+let myModel = await tf.loadLayersModel('https://cdn.jsdelivr.net/gh/r48n34/tfjs-Model/<file-name>/model.json')
 ```
 
 1. catdog: val_accuracy: 0.8333  
