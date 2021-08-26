@@ -1,7 +1,4 @@
-import open from 'open';
 import Discord from 'discord.js';
-
-import {jsonWriteFile, initArray, Pair} from './words.js'
 import dotenv from 'dotenv';
 
 import canvas from 'canvas';
@@ -14,19 +11,14 @@ import mobilenet from '@tensorflow-models/mobilenet';
 
 dotenv.config();
 
-let wordPairArr = initArray(); // array for message pair
+// Remember toccreate a .env for botUID
 
 const bot = new Discord.Client();
 const prefix = "&";
-const myId = process.env.myId;
-const botId = process.env.botId;
 
 let model;
 let modelSSD;
 let modelMobile;
-
-
-modelInit();
 
 // Load in model
 async function modelInit(){
@@ -41,140 +33,17 @@ async function modelInit(){
 
 }
 
+modelInit();
+
 bot.on('ready', async () => {
   console.info(`Logged in as ${bot.user.tag}!`);
 });
 
-// Open page function
-function pageOpen(msg){
-  const message = "HA, you are not my master.";
-  if(msg.author.id == myId){
-    message = "done";
-    let arg = msg.content.split(" ");
-    open(arg[1]); // open that url in google chrome 
-  }
-  msg.channel.send(message); 
-}
-
-// Helper get string
-function getString(arg){
-  let longStr = "";
-
-  for(let i = 2; i < arg.length; i++){ // add afterwards word
-    longStr +=  i + 1 == arg.length ? arg[i] : arg[i] + " ";
-  }
-
-  return longStr;
-}
 
 bot.on('message', async msg => {
   
-  let sayCond = wordPairArr.find( v => v.key === msg.content);
-
-  // Join or leave the chat room
-  async function chatInOut(msg, toIn){ // message, bool (T = in, F = out) 
-
-    if (msg.member.voiceChannelID) {
-      const channel = await bot.channels.get(msg.member.voiceChannelID);     
-      toIn ? channel.join(): channel.leave();
-    }
   
-  }
-
-  // play music
-  async function playMusic(msg){
-  
-    if (msg.member.voiceChannelID) {
-      let arg = msg.content.split(" ");
-  
-      const channelNew = await bot.channels.get(msg.member.voiceChannelID);
-      const connection = await channelNew.join();
-      connection.playFile('./music/' + arg[1]);
-  
-    }
-  
-  }
-
-
-  // Add message to json file
-  function addMessage(msg){
-  
-    const arg = msg.content.split(" "); // [1] = key, [n] = value
-    const longStr = getString(arg);
-    const found = wordPairArr.find( v => v.key === arg[1]); // Dup word on array
-
-    if(found){
-      msg.channel.send("word existed.");
-      return;
-    }
-    
-    // have args 1 and longStr exist
-    if(arg[1] && longStr){
- 
-      wordPairArr.push(new Pair(arg[1], longStr));
-      jsonWriteFile(wordPairArr);
-      msg.channel.send("Text added");
-
-    }
-  
-  }
-
-  // Adjust message to json file
-  async function adjustMessage(msg){
-  
-    const arg = msg.content.split(" ");
-    const longStr = getString(arg);
-
-    console.log(longStr);
-
-    const found = wordPairArr.findIndex( v => v.key === arg[1]); // Dup word on array with index
-
-    if(found >= 0 && longStr){
-      wordPairArr[found].value = longStr;
-      jsonWriteFile(wordPairArr);
-      msg.channel.send("Text adjusted");
-      return;
-    }
-
-    msg.channel.send("Font word don't existed or invalid arguments");
-    return;
-  
-  }
-
-  // Read comments from clients line //
-  if( sayCond ){
-
-    try{
-      if(msg.author.id == botId){
-        return;
-      }
-      msg.channel.send( sayCond.value ); // Normal send
-      
-    }
-    catch(err){
-      console.log(err);
-    }
-    
-  }
-  else if (msg.content.startsWith(prefix + 'open')) { // &open
-    pageOpen(msg);   
-  }
-  else if(msg.content.startsWith(prefix + 'come')){ // &come
-    chatInOut(msg, true);
-  }
-  else if(msg.content.startsWith(prefix + 'leave')){ // &leave
-    chatInOut(msg, false); 
-  }
-  else if(msg.content.startsWith(prefix + 'play')){ // &play xxx.mp3
-    playMusic(msg);  
-  }
-  else if(msg.content.startsWith(prefix + 'add')){ //&add key Message...
-    addMessage(msg);   
-  }
-  else if(msg.content.startsWith(prefix + 'adjust')){ 
-    adjustMessage(msg);   
-  }
-  else if(msg.content.startsWith(prefix + 'whatS')){
+  if(msg.content.startsWith(prefix + 'whatS')){
     imgRec(msg, "ssd");   
   }
   else if(msg.content.startsWith(prefix + 'whatM')){ 
@@ -187,7 +56,6 @@ bot.on('message', async msg => {
   async function imgRec(msg, method){
 
     let att = (msg.attachments)
-    //console.log(att)
 
     if(att.array().length > 0){
 
@@ -268,4 +136,3 @@ bot.on('message', async msg => {
 
 
 });
-
