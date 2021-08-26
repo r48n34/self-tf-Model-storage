@@ -11,21 +11,25 @@ valid_data_dir = 'F:\\ml\\animals\\valid'
 batch_size = 32
 imgSize = 224
 
+# Import training set
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
   train_data_dir, validation_split=0.1,
   subset="training", seed=689,
   image_size=(imgSize, imgSize), batch_size=batch_size
 )
 
+# Import valid set
 valid_ds = tf.keras.preprocessing.image_dataset_from_directory(
   valid_data_dir, validation_split=0.2,
   subset="validation", seed=689,
   image_size=(imgSize, imgSize), batch_size=batch_size
 )
 
+# For dense num
 classNum = len(train_ds.class_names)
 print(train_ds.class_names)
 
+# PLT
 plt.figure(figsize=(10, 10))
 for images, labels in train_ds.take(1):
   for i in range(9):
@@ -49,6 +53,7 @@ data_augmentation = keras.Sequential(
   ]
 )
 
+# Apply to regarding data set
 valid_ds = valid_ds.map(lambda image,label:(resize_and_rescale(image),label))
 valid_ds = valid_ds.map(lambda image,label:(data_augmentation(image),label))
 
@@ -58,6 +63,7 @@ baseModel = tf.keras.applications.MobileNetV2(input_shape=(imgSize,imgSize,3),
                                                include_top=False,
                                                weights='imagenet')
 
+# Set up model
 model = Sequential([
   baseModel,
   tf.keras.layers.GlobalAveragePooling2D(),
@@ -65,16 +71,15 @@ model = Sequential([
   tf.keras.layers.Dense(classNum, activation=tf.nn.softmax)
 ])
 
+# Fine tune, lock first 100 layer
 baseModel.trainable = True
-
 fine_tune_at = 100
 for layer in baseModel.layers[:fine_tune_at]:
   layer.trainable = False
 
+# comppile and fit model
 epochsRound = 12
-
 base_learning_rate = 0.0001
-
 model.compile(optimizer=tf.keras.optimizers.Adam(lr=base_learning_rate),
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
@@ -85,14 +90,16 @@ history = model.fit(train_ds,
                     validation_data=valid_ds
 )
 
+# Evaluate
 test_loss, test_acc = model.evaluate(valid_ds, verbose=2)
 print(test_acc)
 
+
+# Plot history
 acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
 loss = history.history['loss']
 val_loss = history.history['val_loss']
-
 epochs_range = range(epochsRound)
 
 plt.figure(figsize=(8, 8))
@@ -109,5 +116,6 @@ plt.legend(loc='upper right')
 plt.title('Training and Validation Loss')
 plt.show()
 
+# Save model
 #model.save('animals2')
 #tfjs.converters.save_keras_model(model, "./fileHa")
