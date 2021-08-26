@@ -10,17 +10,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"> </script>
 
-<canvas id="detect_result" style="width:800px; height:auto; max-width: 1200px;"></canvas>
 <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg">
-<img id="img" src="ppl2.jpg" style="display: none;" style="width:600px; height:auto; max-width: 1200px;" />
+<img id="img" style="width:600px; height:auto; max-width: 1200px;" />
 
 <script>
 
   const img = document.getElementById('img');
   const avatar = document.getElementById("avatar");
-
-  const canvas = document.getElementById('detect_result');
-  const context = canvas.getContext('2d');
 
   let myModel;
 
@@ -32,7 +28,7 @@
     console.log("Loading Models");
 
     const start = new Date();
-    myModel = await tf.loadLayersModel('https://cdn.jsdelivr.net/gh/r48n34/tfjs-Model/catdog/model.json')
+    myModel = await tf.loadLayersModel('https://cdn.jsdelivr.net/gh/r48n34/tfjs-Model/catdogv2/model.json')
 
     console.log("Time used to init: ",(new Date() - start) / 1000, " Done");
 
@@ -62,8 +58,6 @@
     console.log("Time used to predict: ",(new Date() - afterResize) / 1000)
     console.log("Overall time: ",(new Date() - start) / 1000)
     console.log("----------------------------")
-
-    context.drawImage(img, 0, 0);
 
   }
 
