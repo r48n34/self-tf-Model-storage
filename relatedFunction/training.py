@@ -13,15 +13,13 @@ imgSize = 224
 
 # Import training set
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  train_data_dir, validation_split=0.1,
-  subset="training", seed=689,
+  train_data_dir, seed=689,
   image_size=(imgSize, imgSize), batch_size=batch_size
 )
 
 # Import valid set
 valid_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  valid_data_dir, validation_split=0.2,
-  subset="validation", seed=689,
+  valid_data_dir, seed=689,
   image_size=(imgSize, imgSize), batch_size=batch_size
 )
 
