@@ -4,29 +4,40 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <title>CNN model server</title>
 </head>
 <body>
+    <div class="container" style="text-align: center;">
+        <h1>Input ur pictures</h1>
+        <br>
+        <img id="img" style="width:300px; height:auto; max-width: 600px;" />
+        
+        <form id="myform" enctype="multipart/form-data" class="mt-2">
+            <input type="file" name="file" id="avatar">
+            <br>
+            <input type="submit" value="Submit">
+        </form>
+        
+        <h3 id="mess"></h3>
 
-    <form id="myform" enctype="multipart/form-data" >
-        <input type="file" name="file">
-        <input type="submit" value="Submit">
-    </form>
-    
-    <h1 id="mess"></h1>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
     <script>
         const myform = document.getElementById("myform");
-        const mess = document.getElementById("mess");
-
-        const serverLocation = "http://localhost:5000/pred"
+        const mess = document.getElementById("mess")
 
         myform.addEventListener("submit" , async (event) =>{
             event.preventDefault();
 
             mess.innerHTML = "Loading..."
 
-            let res = await fetch(serverLocation, {
+            let res = await fetch("http://localhost:5000/pred", {
                 body: new FormData(myform), 
                 method: 'POST'
             })
@@ -36,6 +47,38 @@
             mess.innerHTML = b;
 
         })
+
+
+        const img = document.getElementById('img');
+        const avatar = document.getElementById("avatar");
+
+        avatar.addEventListener("input", async (e) =>{
+
+            let f = e.currentTarget;
+            const files = f.files[0]; // get files
+
+            if (files) {
+
+            const fileReader = new FileReader();
+            fileReader.readAsDataURL(files);
+
+            fileReader.addEventListener("load", async function () {
+                
+                img.src = this.result;
+                await timer(200);
+                useModel()
+
+            });  
+
+            }
+
+        })
+
+        function timer(t){
+            return new Promise((rec) =>{
+            setTimeout(rec, t)
+            })
+        }
 
     </script>
     
