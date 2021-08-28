@@ -55,7 +55,6 @@
 
     let afterResize = new Date();
     console.log("Img resize & rescale time", (new Date() - start) / 1000)
-
     console.log(imgPre)
 
     // predict the inupt and output softmax prob
@@ -65,7 +64,6 @@
     const labelMyModel = ["cat", "dog"]
     let ind = p.indexOf(Math.max(...p));
     console.log(p)
-
     
     console.log("MyModel:", labelMyModel[ind])
 
