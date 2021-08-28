@@ -8,19 +8,22 @@ import asyncio
 from flask_cors import CORS
 import tensorflow as tf
 
+
+imgSize = 224
+
+label = ["cat", "dog"]
+target = label[0]
+
+path = "C:\\Users\\Reemo-PC\\Documents\\test vsxc code\\codeNotes\\mlorDl\\webServices\\uploads" #Upload files path
+model = load_model("C:\\Users\\Reemo-PC\\Documents\\test vsxc code\\catdogpy") # Model path
+
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
 app = Flask(__name__)
-app.secret_key = "yooooooooooooo this is a keyyyyy"
+app.secret_key = "super secret key yooooooooooooo"
 app.config['UPLOAD_FOLDER'] = './uploads'
-cors = CORS(app, resources={r"/*": {"origins": "*"}}) # Only on testing
 
-model = load_model("D:\\gh code\\catdogpy") # Model location
-
-imgSize = 224 # img size
-label = ["cat", "dog"] # model label
-path = "uploads" # picture location
-
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/', methods=['GET'])
 def hello():
@@ -39,6 +42,7 @@ def getresult(imgName):
     print(label[np.argmax(prediction)])
     return prediction
 
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -50,29 +54,26 @@ def upload_file():
         print(request.files)
 
         if 'file' not in request.files:
-            print(1)
             flash('No file part')
             return redirect(request.url)
 
         file = request.files['file']
 
         if file.filename == '':
-            print(2)
             flash('No selected file')
             return redirect(request.url)
 
         if file and allowed_file(file.filename):
             try:
-                print(3)
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
                 pred = getresult(filename)
-                return f"Result: {label[np.argmax(pred)]} with {pred} ."
+                return f"Result: {label[np.argmax(pred)]} with {round(float(np.max(pred)),2) * 100}% confidence."
             except:
                 return 'Sorry, server error.'
 
 def warmup():
-    getresult('0_0hi.jpg')
+    getresult('8hi.jpg')
 
 warmup()
