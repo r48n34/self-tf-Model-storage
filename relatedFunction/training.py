@@ -51,15 +51,18 @@ data_augmentation = keras.Sequential(
   ]
 )
 
+# Data expend for image augmentation
+expendRound = 2
+for i in range(expendRound):
+    train_ds = train_ds.concatenate(train_ds)
+
 # Apply to regarding data set
 valid_ds = valid_ds.map(lambda image,label:(resize_and_rescale(image),label))
 valid_ds = valid_ds.map(lambda image,label:(data_augmentation(image),label))
 
 train_ds = train_ds.map(lambda image,label:(resize_and_rescale(image),label))
 
-baseModel = tf.keras.applications.MobileNetV2(input_shape=(imgSize,imgSize,3),
-                                               include_top=False,
-                                               weights='imagenet')
+baseModel = tf.keras.applications.MobileNetV2(input_shape=(imgSize,imgSize,3), include_top=False, weights='imagenet')
 
 # Set up model
 model = Sequential([
@@ -82,11 +85,7 @@ model.compile(optimizer=tf.keras.optimizers.Adam(lr=base_learning_rate),
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-
-history = model.fit(train_ds, 
-                    epochs=epochsRound,
-                    validation_data=valid_ds
-)
+history = model.fit(train_ds, epochs=epochsRound,validation_data=valid_ds)
 
 # Evaluate
 test_loss, test_acc = model.evaluate(valid_ds, verbose=2)
