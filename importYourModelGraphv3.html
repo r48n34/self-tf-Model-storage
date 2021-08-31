@@ -31,6 +31,7 @@
     console.log("Loading Models");
 
     const start = new Date();
+    // #tensorflowjs_converter --input_format=keras --output_format=tfjs_graph_model <input_path> <output_path>
     myModel = await tf.loadGraphModel('https://cdn.jsdelivr.net/gh/r48n34/self-tf-Model-storage/5Classv3Graph/model.json')
 
     console.log("Time used to init: ",(new Date() - start) / 1000, " Done");
