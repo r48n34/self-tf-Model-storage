@@ -23,8 +23,8 @@ size = [1,224,224,3]
 label = ['bird', 'cat', 'dog', 'fish', 'lion']
 ```
 
-3. food101Eff(Experiment):  
-Best: loss: 0.5913 - accuracy: 0.8319 - val_loss: 0.9103 - val_accuracy: 0.7682  
+3. food101Eff:  
+Best: val_accuracy: 0.8472  
 Model: EfficientNetV1B0 noisy_student  
 Training Size: Original food101 dataset (training: 75,750 + valid:25,250)  no data args
 ```javascript
