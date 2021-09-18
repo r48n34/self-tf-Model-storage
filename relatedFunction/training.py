@@ -1,33 +1,34 @@
+from numpy.core.numeric import False_
 import tensorflow as tf
-from tensorflow.keras import layers
+from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
-import tensorflowjs as tfjs
+#import numpy as np
+#import os
+import datetime
+
+#import tensorflowjs as tfjs
+
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
 
-train_data_dir = 'F:\\ml\\animals\\train'
-valid_data_dir = 'F:\\ml\\animals\\valid'
+data_dir = "D:\\gh code\\codeNotes\\university\\webScraper\\food"
 
-batch_size = 32
+batch_size = 64
 imgSize = 224
 
-# Import training set
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  train_data_dir, seed=689,
+  data_dir, seed=123, subset="training", validation_split=0.2,
   image_size=(imgSize, imgSize), batch_size=batch_size
 )
 
-# Import valid set
 valid_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  valid_data_dir, seed=689,
+  data_dir, seed=123, subset="validation", validation_split=0.2,
   image_size=(imgSize, imgSize), batch_size=batch_size
 )
 
-# For dense num
 classNum = len(train_ds.class_names)
 print(train_ds.class_names)
 
-# PLT
 plt.figure(figsize=(10, 10))
 for images, labels in train_ds.take(1):
   for i in range(9):
@@ -38,65 +39,66 @@ for images, labels in train_ds.take(1):
 
 plt.show()
 
-resize_and_rescale = tf.keras.Sequential([
-  layers.experimental.preprocessing.Resizing(imgSize, imgSize),
-  layers.experimental.preprocessing.Rescaling(1./imgSize)
-])
-
 data_augmentation = keras.Sequential(
   [
     layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical"),
     layers.experimental.preprocessing.RandomRotation(0.1),
     layers.experimental.preprocessing.RandomZoom(0.1),
+    layers.experimental.preprocessing.RandomContrast(0.1),
   ]
 )
 
 # Data expend for image augmentation
-expendRound = 2
+expendRound = 4
+temp_ds = train_ds
 for i in range(expendRound):
-    train_ds = train_ds.concatenate(train_ds)
+    train_ds = train_ds.concatenate(temp_ds)
 
-# Apply to regarding data set
-valid_ds = valid_ds.map(lambda image,label:(resize_and_rescale(image),label))
-valid_ds = valid_ds.map(lambda image,label:(data_augmentation(image),label))
+train_ds = train_ds.map(lambda image,label:(data_augmentation(image),label))
 
-train_ds = train_ds.map(lambda image,label:(resize_and_rescale(image),label))
+baseModel = tf.keras.applications.MobileNetV3Large(input_shape=(imgSize,imgSize,3),
+                                               include_top=False,
+                                               weights='imagenet')
 
-baseModel = tf.keras.applications.MobileNetV2(input_shape=(imgSize,imgSize,3), include_top=False, weights='imagenet')
-
-# Set up model
-model = Sequential([
-  baseModel,
-  tf.keras.layers.GlobalAveragePooling2D(),
-  tf.keras.layers.Dropout(0.1),
-  tf.keras.layers.Dense(classNum, activation=tf.nn.softmax)
-])
-
-# Fine tune, lock first 100 layer
 baseModel.trainable = True
-fine_tune_at = 100
+print("Layers count", len(baseModel.layers))
+
+fine_tune_at = int( len(baseModel.layers) * 0.6)
 for layer in baseModel.layers[:fine_tune_at]:
   layer.trainable = False
 
-# comppile and fit model
-epochsRound = 12
+model = Sequential([
+  baseModel,
+  tf.keras.layers.GlobalAveragePooling2D(),
+  tf.keras.layers.Dropout(0.4),
+  tf.keras.layers.Dense(classNum, activation=tf.nn.softmax)
+])
+
+epochsRound = 8
+
 base_learning_rate = 0.0001
 model.compile(optimizer=tf.keras.optimizers.Adam(lr=base_learning_rate),
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-history = model.fit(train_ds, epochs=epochsRound,validation_data=valid_ds)
+log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+# tensorboard --logdir logs/fit
 
-# Evaluate
+history = model.fit(train_ds, 
+                    epochs=epochsRound,
+                    validation_data=valid_ds,
+                    callbacks=[tensorboard_callback]
+)
+
 test_loss, test_acc = model.evaluate(valid_ds, verbose=2)
 print(test_acc)
 
-
-# Plot history
 acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
 loss = history.history['loss']
 val_loss = history.history['val_loss']
+
 epochs_range = range(epochsRound)
 
 plt.figure(figsize=(8, 8))
@@ -113,6 +115,8 @@ plt.legend(loc='upper right')
 plt.title('Training and Validation Loss')
 plt.show()
 
-# Save model
-#model.save('animals2')
-#tfjs.converters.save_keras_model(model, "./fileHa")
+#y_pred = model.predict_classes(test_images)
+#con_mat = tf.math.confusion_matrix(labels=y_true, predictions=y_pred).numpy()
+
+#model.save('catdogpyvMobie3.h5')
+#tfjs.converters.save_keras_model(model, "./fileHa4")
