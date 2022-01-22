@@ -10,16 +10,15 @@ import numpy as np
 import os
 import tensorflow as tf
 
-app = Sanic("App Name")
-app.config["upload"] = 'D:\\gh code\\codeNotes\\mlorDl\\sanicWebServices\\uploads'
-
-imgSize = 224
-
-label = ["cat", "dog"]
-target = label[0]
+app = Sanic("App_Name")
+app.config["upload"] = 'D:\\gh code\\codeNotes\\mlorDl\\sanicWebServices\\uploads' # your uploaded photo folder
 
 model = load_model("D:\\gh code\\catdogpy") # Model path
 
+imgSize = 224 # original model input images size
+label = ["cat", "dog"] # original model label
+
+# create folder if not exist
 if not os.path.exists(app.config["upload"]):
     os.makedirs(app.config["upload"])
 
@@ -55,8 +54,8 @@ async def getFiles(request):
 def warmup():
     getresult('0_8hi - 複製.jpg')
 
-warmup()
 
 if __name__ == "__main__":
+    warmup()
     app.run(host="0.0.0.0", port=8000)
 
