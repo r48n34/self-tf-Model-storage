@@ -156,32 +156,28 @@
 
     loadingDisplay.innerHTML = ``;
 
-
-
     // Extra: get top 5 predictions
     // predict float array to int array
 
-    const {values, indices} = tf.topk(p, 5);  
+    const topK = 5
+
+    const {values, indices} = tf.topk(p, topK);  
 
     values.print();
     indices.print();
 
-    const top5ArrPoss = Array.from( values.dataSync() )
-    const top5Arr = Array.from( indices.dataSync() )
+    const topArrPoss = Array.from( values.dataSync() ) // top K confident value
+    const topArr = Array.from( indices.dataSync() ) // top K array index
 
-    let topFiveArr = []
-    for(let op = 0; op < 5; op ++){
-      topFiveArr.push( {label: labelMyModel[ top5Arr[op] ], confident: top5ArrPoss[op]  } )
+    predictedLabelTopFive.innerHTML = ``
+
+    let topFiveArr = [] // array to store top 5 label and confident
+    for(let i = 0; i < topK; i ++){
+      topFiveArr.push( {label: labelMyModel[ topArr[i] ], confident: topArrPoss[i]  } );
+      predictedLabelTopFive.innerHTML += `<h3> Top${i + 1}: Label : ${ labelMyModel[ topArr[i] ] } ( Confident: ${topArrPoss[i]} )  </h3>`;
     }
 
     console.log(topFiveArr);
-    predictedLabelTopFive.innerHTML = ``
-
-    topFiveArr.forEach( (v,i) => {
-      predictedLabelTopFive.innerHTML += `
-      <h3> Top${i + 1}: Label : ${v.label} ( Confident: ${v.confident} )  </h3>
-      `
-    })
 
   }
 
@@ -199,7 +195,7 @@
         
         img.src = this.result;
         await timer(200);
-        useModel()
+        useModel();
 
       });  
 
@@ -209,7 +205,7 @@
 
   function timer(t){
     return new Promise((rec) =>{
-      setTimeout(rec, t)
+      setTimeout(rec, t);
     })
   }
 
