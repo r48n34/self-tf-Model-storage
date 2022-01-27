@@ -5,20 +5,87 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CNN model imports</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 </head>
 <body>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"> </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"> </script>
 
-<input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg">
-<img id="img" style="width:600px; height:auto; max-width: 1200px;" />
+
+  <div class="container">
+    <h1>Food predictions demo:</h1>
+    <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg">
+    <img id="img" style="width:600px; height:auto; max-width: 600px; max-width: 600px;" />
+    <br/><br/>
+    <div id="loadingDisplay"></div>
+    <div id="predictedLabel">
+      <h3> Predicted label: </h3>
+      <h3> Confidence: </h3>
+    </div>
+  </div>
 
 <script>
+  /*
+    General flow:
+    1. Download your model.h5 to your pc
 
-  const img = document.getElementById('img');
-  const avatar = document.getElementById("avatar");
+    2. Download python tensorflowjs
+    -  pip install tensorflowjs (since we are using tensorflowjs_converter in local environment)
+
+    3. Using tensorflowjs_converter in your terminal
+    -  tensorflowjs_converter --input_format=keras --output_format=tfjs_graph_model <input_path> <output_path>
+
+    4. At that point, you will have a folder holding the model.json and other weights files
+
+    5. Open a repository in github (NOT gitlab, is github), git push your folder to that repository
+
+    6. Your jsdelivr link should be like this
+    -  'https://cdn.jsdelivr.net/gh/r48n34/self-tf-Model-storage/5Classv3Graph/model.json'
+
+    7. Change the modelUrlPath, imgSize, labelMyModel by your own data
+
+  
+  */
+
+  const img = document.getElementById('img'); // img box
+  const avatar = document.getElementById("avatar"); // input images elements
+
+  const loadingDisplay = document.getElementById("loadingDisplay"); // display spinner
+  const predictedLabel = document.getElementById("predictedLabel"); // display predicted text
 
   let myModel;
+
+  ////////////////////////////////////////////////////////
+
+  // Depends on your model scale:
+  // [-1, 1]: divNum 127.5 subNum 1
+  // [0, 1]: divNum 255 subNum 0
+  // [255, 0]: divNum 1 subNum 0
+  const divNum = 127.5
+  const subNum = 1
+
+  const modelUrlPath = 'https://cdn.jsdelivr.net/gh/r48n34/self-tf-Model-storage/food101Eff/model.json'
+  const imgSize = 224
+  const labelMyModel = [
+    'Apple pie','Baby back ribs','Baklava','Beef carpaccio','Beef tartare','Beet salad',
+    'Beignets','Bibimbap','Bread pudding','Breakfast burrito','Bruschetta','Caesar salad',
+    'Cannoli','Caprese salad','Carrot cake','Ceviche','Cheesecake','Cheese plate',
+    'Chicken curry','Chicken quesadilla','Chicken wings','Chocolate cake','Chocolate mousse','Churros',
+    'Clam chowder','Club sandwich','Crab cakes','Creme brulee','Croque madame',
+    'Cup cakes','Deviled eggs','Donuts','Dumplings','Edamame','Eggs benedict',
+    'Escargots','Falafel','Filet mignon','Fish and chips','Foie gras','French fries',
+    'French onion soup','French toast','Fried calamari','Fried rice','Frozen yogurt',
+    'Garlic bread','Gnocchi','Greek salad','Grilled cheese sandwich','Grilled salmon',
+    'Guacamole','Gyoza','Hamburger','Hot and sour soup','Hot dog','Huevos rancheros','Hummus',
+    'Ice cream','Lasagna','Lobster bisque','Lobster roll sandwich','Macaroni and cheese','Macarons',
+    'Miso soup','Mussels','Nachos','Omelette','Onion rings','Oysters','Pad thai','Paella','Pancakes','Panna cotta',
+    'Peking duck','Pho','Pizza','Pork chop','Poutine','Prime rib','Pulled pork sandwich','Ramen','Ravioli','Red velvet cake',
+    'Risotto','Samosa','Sashimi','Scallops','Seaweed salad','Shrimp and grits','Spaghetti bolognese','Spaghetti carbonara',
+    'Spring rolls','Steak','Strawberry shortcake','Sushi','Tacos','Takoyaki','Tiramisu','Tuna tartare','Waffles'
+  ]
+
+  ////////////////////////////////////////////////////////
 
   
 
@@ -34,48 +101,61 @@
     // #tensorflowjs_converter --input_format=keras --output_format=tfjs_graph_model <input_path> <output_path>
     // upload your tfjs folder to a public respo folder
     // https://cdn.jsdelivr.net/gh/<your username>/<your respo>/<your model folder>/model.json
-    myModel = await tf.loadGraphModel('https://cdn.jsdelivr.net/gh/r48n34/self-tf-Model-storage/5Classv3Graph/model.json')
+    myModel = await tf.loadGraphModel(modelUrlPath)
 
     console.log("Time used to init: ",(new Date() - start) / 1000, " Done");
 
   }
 
-  let res;
-
+  // do model predictions
   async function useModel(){
+
+    loadingDisplay.innerHTML = `
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    `
+
+    await timer(200);
+
     let start = new Date();
 
     // Read img and reshape it
     // https://stackoverflow.com/questions/54774073/incorrect-predictions-when-using-the-keras-pre-trained-inceptionv3-xception-mode
     // normalizing the images into the range [-1, 1] before inputting them !!
     let imgPre = await tf.browser.fromPixels(img)
-      .resizeNearestNeighbor([224, 224])
+      .resizeNearestNeighbor([imgSize, imgSize])
       .toFloat()
-      .div(tf.scalar(127.5)) // may set to 1 or just remove it
-      .sub(tf.scalar(1)) // may set to 0 or just remove it
+      .div(tf.scalar(divNum)) 
+      .sub(tf.scalar(subNum))
       .expandDims();   
 
     let afterResize = new Date();
     console.log("Img resize & rescale time", (new Date() - start) / 1000)
-    console.log(imgPre)
+    console.log(imgPre);
 
     // predict the inupt and output softmax prob
     const p = await myModel.predict(imgPre).data();
-   
-    // Get result and print regarding label
-    // Adjust this to your model label
-    const labelMyModel = ['bird', 'cat', 'dog', 'fish', 'lion']
-    let ind = p.indexOf(Math.max(...p));
-    console.log(p)
-    
-    console.log("MyModel:", labelMyModel[ind])
 
-    console.log("Time used to predict: ",(new Date() - afterResize) / 1000)
-    console.log("Overall time: ",(new Date() - start) / 1000)
-    console.log("----------------------------")
+    let ind = p.indexOf(Math.max(...p));
+    console.log(p);
+    
+    console.log("MyModel:", labelMyModel[ind]);
+
+    predictedLabel.innerHTML = `
+    <h3> Predicted label: ${labelMyModel[ind]} </h3>
+    <h3> Confidence: ${p[ind]} </h3>
+    `
+
+    console.log("Time used to predict: ",(new Date() - afterResize) / 1000);
+    console.log("Overall time: ",(new Date() - start) / 1000);
+    console.log("----------------------------");
+
+    loadingDisplay.innerHTML = ``;
 
   }
 
+  // load your image to display and fit into model for predictions
   avatar.addEventListener("input", async (e) =>{
     let f = e.currentTarget;
     const files = f.files[0]; // get files
@@ -102,52 +182,6 @@
       setTimeout(rec, t)
     })
   }
-
-  /*
-
-  in .py
-  tfjs.converters.save_keras_model(model, "./normalNoTop3CoffeeTea")
-
-  // tfjs does not support the resize / rescaling!!!!
-  // Don't train your model with img_args and resize in your model
-  // Outside OK
-
-  (Not OK)
-  resize_and_rescale = tf.keras.Sequential([
-    layers.experimental.preprocessing.Resizing(imgSize, imgSize),
-    layers.experimental.preprocessing.Rescaling(1./imgSize)
-  ])
-
-  data_augmentation = keras.Sequential([
-    layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical"),
-    layers.experimental.preprocessing.RandomRotation(0.1),
-    layers.experimental.preprocessing.RandomZoom(0.1),
-  ])
-
-  model = Sequential([
-    resize_and_rescale,
-    data_augmentation,
-    baseModel,
-    tf.keras.layers.GlobalAveragePooling2D(),
-    tf.keras.layers.Dropout(0.1),
-    tf.keras.layers.Dense(classNum, activation=tf.nn.softmax)
-  ])
-
-  (OK)
-  valid_ds = valid_ds.map(lambda image,label:(resize_and_rescale(image),label))
-  valid_ds = valid_ds.map(lambda image,label:(data_augmentation(image),label))
-  train_ds = train_ds.map(lambda image,label:(resize_and_rescale(image),label))
-
-  model = Sequential([
-    baseModel,
-    tf.keras.layers.GlobalAveragePooling2D(),
-    tf.keras.layers.Dropout(0.1),
-    tf.keras.layers.Dense(classNum, activation=tf.nn.softmax)
-  ])
-  
-  */
-
-  //tensorflowjs_converter --input_format=keras F:\fileHa2 F:\yos
 
  </script>
 
