@@ -60,7 +60,8 @@ async function getMedia() {
     }
 }
 
-window.onload = () => {
+window.onload = async () => {
+    await tf.ENV.set('WEBGL_PACK_DEPTHWISECONV', 'false');
     getMedia();
 }
 
@@ -104,23 +105,20 @@ var requestAnimationFrameCross = window.webkitRequestAnimationFrame ||
         window.requestAnimationFrame || window.mozRequestAnimationFrame ||
         window.oRequestAnimationFrame || window.msRequestAnimationFrame;
 
-//console.log(requestAnimationFrameCross)
-
-
 async function predictModel(){
     
     stats.begin();
 
-    let imgPre = await tf.browser.fromPixels(video)
-      .resizeNearestNeighbor([imgSize, imgSize])
-      .toFloat()
-      .div(tf.scalar(255.0)) 
-      .expandDims();
+    let imgPre = await tf.tidy(() => { 
+        return tf.browser.fromPixels(video)
+            .resizeNearestNeighbor([imgSize, imgSize])
+            .toFloat()
+            .div(tf.scalar(255.0)) 
+            .expandDims();
+    });
     
     // img , maxNumBoxes, minScore
     const result = await model.executeAsync(imgPre);
-
-    //console.log(result);
 
     const font = "16px sans-serif";
     ctx.font = font;
@@ -132,7 +130,9 @@ async function predictModel(){
     const classes_data = classes.dataSync();
     const valid_detections_data = valid_detections.dataSync()[0];
 
-    tf.dispose(result)
+    await tf.dispose(result);
+    await tf.dispose(imgPre);
+    await tf.disposeVariables(result);
 
     ctx.drawImage(video, 0, 0);
 
