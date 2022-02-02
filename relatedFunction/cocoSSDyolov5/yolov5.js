@@ -45,8 +45,6 @@ async function getMedia() {
             facingMode: "environment" 
         }
     };
-
-    //let res = await navigator.mediaDevices.enumerateDevices();
   
     try {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -136,8 +134,14 @@ async function predictModel(){
 
     ctx.drawImage(video, 0, 0);
 
-    var i;
-    for (i = 0; i < valid_detections_data; ++i) {
+    // score lower that this will not diplay
+    let scoreThras = 0.4
+
+    for (let i = 0; i < valid_detections_data; ++i) {
+
+        if( scores_data[i] <= scoreThras){
+            continue;
+        }
 
         let [x1, y1, x2, y2] = boxes_data.slice(i * 4, (i + 1) * 4);
         x1 *= canvas.width;
@@ -162,7 +166,12 @@ async function predictModel(){
 
     }
 
-    for (i = 0; i < valid_detections_data; ++i){
+    for (let i = 0; i < valid_detections_data; ++i){
+
+        if( scores_data[i] <= scoreThras){
+            continue;
+        }
+
         let [x1, y1, , ] = boxes_data.slice(i * 4, (i + 1) * 4);
         x1 *= canvas.width;
         y1 *= canvas.height;
